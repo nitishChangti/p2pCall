@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { prepareMedia } from "../socket/webrtc";
 import { webrtcStore } from "../socket/webrtcStore";
-
+import {CallView} from '../components/index'
 export default function CallPage() {
   const [ready, setReady] = useState(false);
 
