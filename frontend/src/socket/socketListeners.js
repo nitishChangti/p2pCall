@@ -61,4 +61,9 @@ export const registerSocketListeners = (socket, dispatch) => {
       await webrtcStore.pc.addIceCandidate(candidate);
     }
   });
+
+  socket.on("call-ended", () => {
+  cleanupWebRTC();
+});
+
 };

@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { prepareMedia } from "../socket/webrtc";
-import CallView from "./CallView";
+import { webrtcStore } from "../socket/webrtcStore";
 
 export default function CallPage() {
   const [ready, setReady] = useState(false);
 
   const startCall = async () => {
-    await prepareMedia();   // ✅ SAFE HERE
+    await prepareMedia();
     setReady(true);
   };
+
+  useEffect(() => {
+    if (ready && webrtcStore.pc === null) {
+      // WebRTC will auto-start via socket events
+    }
+  }, [ready]);
 
   return (
     <div className="h-screen bg-black flex items-center justify-center">
