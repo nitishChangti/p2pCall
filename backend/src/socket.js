@@ -15,6 +15,8 @@ export function initializeSocket(server) {
 
   io.on("connection", (socket) => {
       const userId = socket.handshake.auth?.userId;
+      console.log("🔐 SOCKET AUTH USERID:", userId);
+
     if(!userId){
       console.log("❌ Socket connected without userId");
       socket.disconnect();
@@ -23,6 +25,8 @@ export function initializeSocket(server) {
 
       // ✅ Map userId → socketId
     userSocketMap.set(userId, socket.id);
+    console.log("🗺️ CURRENT SOCKET MAP:", [...userSocketMap.entries()]);
+
         console.log(
       `✅ User connected | userId=${userId} | socketId=${socket.id}`
     );
@@ -33,9 +37,10 @@ export function initializeSocket(server) {
         callType,
       });
       const receiverSocketId = userSocketMap.get(receiverId);
-
+      console.log(`receiver socket id `,receiverSocketId);
       if(receiverSocketId){
         io.to(receiverSocketId).emit('incoming-call',{callerId,callType})
+        console.log('this is after the incoming -call sended to user receiever');
       }
       else{
         socket.emit('user-offline',{receiverId})
@@ -53,6 +58,7 @@ export function initializeSocket(server) {
         io.to(callerSocketId).emit("call-accepted", {
           receiverId: userId,
         });
+        console.log('call acception is sended to the user a', callerId);
       }
     });
 
@@ -71,7 +77,7 @@ export function initializeSocket(server) {
 
     /* ---------------------- webrtc-offer ------------------ */
     socket.on('webrtc-offer',({receiverId,offer})=>{
-      console.log(`user webrtc offer req on server`);
+      console.log(`user webrtc offer req on server`,receiverId,offer);
       const receiverSocketId = userSocketMap.get(receiverId);
       if(receiverSocketId){
         io.to(receiverSocketId).emit('webrtc-offer',{
@@ -87,7 +93,7 @@ export function initializeSocket(server) {
 
     /* ---------------------- WEBRTC ANSWER ------------------ */
 socket.on("webrtc-answer", ({ callerId, answer }) => {
-  console.log("📡 WebRTC answer received on server");
+  console.log("📡 WebRTC answer received on server",callerId,answer);
 
   const callerSocketId = userSocketMap.get(callerId);
 
@@ -104,11 +110,12 @@ socket.on("webrtc-answer", ({ callerId, answer }) => {
   /* ---------------------- ICE CANDIDATE ------------------ */
 socket.on("ice-candidate", ({ targetUserId, candidate }) => {
   const targetSocketId = userSocketMap.get(targetUserId);
-
+  console.log('ice candidate is',targetSocketId,candidate);
   if (targetSocketId) {
     io.to(targetSocketId).emit("ice-candidate", {
       candidate,
     });
+    console.log('ice candidate is sended to given user',targetSocketId,candidate);
   } else {
     console.log("❌ Target socket not found for ICE");
   }
