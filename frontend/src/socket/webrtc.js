@@ -1,125 +1,98 @@
 import { getSocket } from "./socketClient";
 import { webrtcStore } from "./webrtcStore";
-import {flushIceCandidates} from './socketListeners'
-/* -------------------------------------------------- */
-/* MEDIA (USER GESTURE ONLY)                           */
-/* -------------------------------------------------- */
-let pendingCandidates = [];
 
+/* -------------------------------------------------- */
+/* MEDIA                                               */
+/* -------------------------------------------------- */
 let preparingMedia = false;
 
 export async function prepareMedia() {
-    console.log(`preparemedia is started`);
-  if (webrtcStore.localStream) return;
-  if (preparingMedia) return;
+  if (webrtcStore.localStream || preparingMedia) return;
 
   preparingMedia = true;
-
   try {
-    webrtcStore.localStream =
-     await navigator.mediaDevices.getUserMedia({
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    frameRate: { ideal: 30 }
-  },
-  audio: true,
-});
-
+    webrtcStore.localStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 1280, height: 720, frameRate: 30 },
+      audio: true,
+    });
   } finally {
     preparingMedia = false;
   }
 }
 
 /* -------------------------------------------------- */
-/* CALLER                                             */
+/* CALLER                                              */
 /* -------------------------------------------------- */
-
 export async function startCallerWebRTC(receiverId) {
-  if (webrtcStore.pc) return;
-  if (!webrtcStore.localStream) return; // 🔒 hard guard
+  if (webrtcStore.pc || !webrtcStore.localStream) return;
 
   const socket = getSocket();
-  const stream = webrtcStore.localStream;
+  const pc = createPeerConnection(receiverId);
 
-  const pc = createPeerConnection(stream, receiverId);
   webrtcStore.pc = pc;
+
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  flushIceCandidates(); // ✅ ADD THIS
-  
+
   socket.emit("webrtc-offer", { receiverId, offer });
 }
 
 /* -------------------------------------------------- */
-/* RECEIVER                                           */
+/* RECEIVER                                            */
 /* -------------------------------------------------- */
-
 export async function startReceiverWebRTC(offer, callerId) {
-  if (webrtcStore.pc) return;
-  if (!webrtcStore.localStream) return; // 🔒 hard guard
+  if (webrtcStore.pc || !webrtcStore.localStream) return;
 
   const socket = getSocket();
-  const stream = webrtcStore.localStream;
-  console.log(
-  "📤 Creating ANSWER with tracks:",
-  webrtcStore.localStream.getTracks().map(t => t.kind)
-);
-  const pc = createPeerConnection(stream, callerId);
+  const pc = createPeerConnection(callerId);
+
   webrtcStore.pc = pc;
+
   await pc.setRemoteDescription(offer);
-  
+
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
-  flushIceCandidates(); // ✅ ADD THIS
 
   socket.emit("webrtc-answer", { callerId, answer });
 }
 
 /* -------------------------------------------------- */
-/* PEER CONNECTION                                    */
+/* PEER CONNECTION                                     */
 /* -------------------------------------------------- */
-
-function createPeerConnection(stream, targetUserId) {
+function createPeerConnection(targetUserId) {
   const socket = getSocket();
 
-  // const pc = new RTCPeerConnection({
-  //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  // });
   const pc = new RTCPeerConnection({
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-  ],
-});
-  // 🔍 ICE state debug (ADD HERE)
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      {
+        urls: "turn:openrelay.metered.ca:80",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+    ],
+  });
+
   pc.oniceconnectionstatechange = () => {
     console.log("ICE STATE:", pc.iceConnectionState);
   };
-  // Attach local tracks
-  stream.getTracks().forEach(track => {
-    pc.addTrack(track, stream);
+
+  webrtcStore.localStream.getTracks().forEach((track) => {
+    pc.addTrack(track, webrtcStore.localStream);
   });
 
-  // Remote stream
   pc.ontrack = (event) => {
-    console.log("🎥 REMOTE TRACK RECEIVED");
+    console.log("🎥 Remote stream received");
 
     const remoteStream = event.streams[0];
     webrtcStore.remoteStream = remoteStream;
 
-    // Bind directly to video element
-    const remoteVideo = document.getElementById("remote-video");
-    if (remoteVideo) {
-      remoteVideo.srcObject = remoteStream;
+    const video = document.getElementById("remote-video");
+    if (video && video.srcObject !== remoteStream) {
+      video.srcObject = remoteStream;
     }
   };
 
-  // ICE candidates
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("ice-candidate", {
@@ -133,9 +106,8 @@ function createPeerConnection(stream, targetUserId) {
 }
 
 /* -------------------------------------------------- */
-/* CLEANUP                                            */
+/* CLEANUP                                             */
 /* -------------------------------------------------- */
-
 export function cleanupWebRTC() {
   if (webrtcStore.pc) {
     webrtcStore.pc.close();
@@ -143,7 +115,7 @@ export function cleanupWebRTC() {
   }
 
   if (webrtcStore.localStream) {
-    webrtcStore.localStream.getTracks().forEach(t => t.stop());
+    webrtcStore.localStream.getTracks().forEach((t) => t.stop());
     webrtcStore.localStream = null;
   }
 
