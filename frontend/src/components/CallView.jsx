@@ -14,18 +14,23 @@ export default function CallView() {
   const [videoOn, setVideoOn] = useState(true);
 
   /* ---------------- Video Binding ---------------- */
-  useEffect(() => {
+//   useEffect(() => {
+//   if (localRef.current && webrtcStore.localStream) {
+//     localRef.current.srcObject = webrtcStore.localStream;
+//   }
+// }, [webrtcStore.localStream]);
+
+// useEffect(() => {
+//   if (remoteRef.current && webrtcStore.remoteStream) {
+//     remoteRef.current.srcObject = webrtcStore.remoteStream;
+//   }
+// }, [webrtcStore.remoteStream]);
+    useEffect(() => {
   if (localRef.current && webrtcStore.localStream) {
     localRef.current.srcObject = webrtcStore.localStream;
   }
-}, [webrtcStore.localStream]);
-
-useEffect(() => {
-  if (remoteRef.current && webrtcStore.remoteStream) {
-    remoteRef.current.srcObject = webrtcStore.remoteStream;
-  }
-}, [webrtcStore.remoteStream]);
-
+}, []);
+  
 
   /* ---------------- Controls ---------------- */
   const toggleAudio = () => {
@@ -70,7 +75,8 @@ useEffect(() => {
 
         <div className="aspect-video w-1/3 bg-black rounded overflow-hidden">
           <video
-            ref={remoteRef}
+            // ref={remoteRef}
+             id="remote-video"   // 🔴 REQUIRED
             autoPlay
             playsInline
             disablePictureInPicture

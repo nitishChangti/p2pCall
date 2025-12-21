@@ -107,7 +107,16 @@ function createPeerConnection(stream, targetUserId) {
 
   // Remote stream
   pc.ontrack = (event) => {
-    webrtcStore.remoteStream = event.streams[0];
+    console.log("🎥 REMOTE TRACK RECEIVED");
+
+    const remoteStream = event.streams[0];
+    webrtcStore.remoteStream = remoteStream;
+
+    // Bind directly to video element
+    const remoteVideo = document.getElementById("remote-video");
+    if (remoteVideo) {
+      remoteVideo.srcObject = remoteStream;
+    }
   };
 
   // ICE candidates
