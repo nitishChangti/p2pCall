@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
-   try {
+  try {
     this.password = await bcrypt.hash(this.password, 10);
   } catch (err) {
     throw err; // will be caught by asyncHandler at controller level

@@ -6,6 +6,7 @@ app.use(
   cors({
     origin: [
       `http://localhost:5173`, // Your frontend on Vercel
+       "https://abcd-5173.portforward.dev"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],

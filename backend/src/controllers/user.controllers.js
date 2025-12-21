@@ -48,13 +48,10 @@ export const registerUser = asyncHandler(async (req, res) => {
   const refreshToken = user.generateRefreshToken();
 
   // ✅ Update refreshToken safely
-  await User.updateOne(
-    { _id: user._id },
-    { refreshToken }
-  );
+  await User.updateOne({ _id: user._id }, { refreshToken });
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken",
   );
 
   const options = {
@@ -71,20 +68,20 @@ export const registerUser = asyncHandler(async (req, res) => {
         201,
         { createdUser, accessToken },
         "User registered successfully",
-        true
-      )
+        true,
+      ),
     );
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
   console.log(`this is a controller of getcurrentuser ${req.user}`);
   const user = await User.findById(req.user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken",
   );
 
-  return res.status(200).json(
-    new ApiResponse(200, {user}, "User fetched",true)
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User fetched", true));
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -116,7 +113,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(user._id, { refreshToken });
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken",
   );
 
   const cookieOptions = {
@@ -129,12 +126,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .json(
-      new ApiResponse(
-        200,
-        { user: loggedInUser },
-        "Login successful",
-        true
-      )
+      new ApiResponse(200, { user: loggedInUser }, "Login successful", true),
     );
 });
 
@@ -145,13 +137,13 @@ export const UserLogOut = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     userId,
     { $set: { refreshToken: null } },
-    { new: true }
+    { new: true },
   );
 
   // 2️⃣ Cookie options (MUST match login cookie options)
   const options = {
     httpOnly: true,
-    secure: false,          // true in production (HTTPS)
+    secure: false, // true in production (HTTPS)
     sameSite: "strict",
   };
 
@@ -160,11 +152,5 @@ export const UserLogOut = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        {},
-        "User logged out successfully"
-      )
-    );
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });

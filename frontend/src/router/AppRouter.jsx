@@ -5,36 +5,42 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import  AuthLayout from '../components/AuthLayout'
 import NewCall from "../pages/NewCall";
-const router =  createBrowserRouter([ 
-  {
-    path:'/',
-    element:<App/>,
-    children:[
-      {
-        path:'/',
-        element:<Home/>
-      },
-      {
-        path:"/login",
-        element:<Login/>
-      },
-      {
-        path:'/signup',
-        element:<Register/>
-      },
-      {
-  element: <AuthLayout />,
-  children: [
-    {
-      path: "/video-request",
-      element: <NewCall />
-    }
-  ]
-}
+import { CallPage } from "../components/index";
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+    children: [
+      {
+        path: "/",
+        element: <Home />
+      },
+      {
+        path: "/login",
+        element: <Login />
+      },
+      {
+        path: "/signup",
+        element: <Register />
+      },
+      {
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "/video-request",
+            element: <NewCall />
+          },
+          {
+            path: "/call/:userId",     // ✅ NEW ROUTE
+            element: <CallPage />
+          }
+        ]
+      }
     ]
   }
-])
+]);
+
 
 export default function AppRouter(){
     return(
