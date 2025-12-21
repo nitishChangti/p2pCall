@@ -15,18 +15,17 @@ export default function CallView() {
 
   /* ---------------- Video Binding ---------------- */
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (localRef.current && webrtcStore.localStream) {
-        localRef.current.srcObject = webrtcStore.localStream;
-      }
+  if (localRef.current && webrtcStore.localStream) {
+    localRef.current.srcObject = webrtcStore.localStream;
+  }
+}, [webrtcStore.localStream]);
 
-      if (remoteRef.current && webrtcStore.remoteStream) {
-        remoteRef.current.srcObject = webrtcStore.remoteStream;
-      }
-    }, 300);
+useEffect(() => {
+  if (remoteRef.current && webrtcStore.remoteStream) {
+    remoteRef.current.srcObject = webrtcStore.remoteStream;
+  }
+}, [webrtcStore.remoteStream]);
 
-    return () => clearInterval(interval);
-  }, []);
 
   /* ---------------- Controls ---------------- */
   const toggleAudio = () => {
@@ -57,37 +56,38 @@ export default function CallView() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-black">
-      {/* Videos */}
+      <div className="h-full flex flex-col items-center justify-center bg-black">
       <div className="flex gap-4 w-full justify-center">
-        <video ref={localRef} autoPlay muted playsInline className="w-1/3 rounded" />
-        <video ref={remoteRef} autoPlay playsInline className="w-1/3 rounded" />
+        <div className="aspect-video w-1/3 bg-black rounded overflow-hidden">
+          <video
+            ref={localRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <div className="aspect-video w-1/3 bg-black rounded overflow-hidden">
+          <video
+            ref={remoteRef}
+            autoPlay
+            playsInline
+            disablePictureInPicture
+            disableRemotePlayback
+            className="w-full h-full object-cover"
+          />
+        </div>
       </div>
 
-      {/* Controls */}
       <div className="flex gap-6 mt-6">
-        <button
-          onClick={toggleAudio}
-          className={`px-4 py-2 rounded ${
-            audioOn ? "bg-gray-700" : "bg-red-600"
-          }`}
-        >
+        <button onClick={toggleAudio} className="px-4 py-2 rounded bg-gray-700">
           {audioOn ? "Mute" : "Unmute"}
         </button>
-
-        <button
-          onClick={toggleVideo}
-          className={`px-4 py-2 rounded ${
-            videoOn ? "bg-gray-700" : "bg-red-600"
-          }`}
-        >
+        <button onClick={toggleVideo} className="px-4 py-2 rounded bg-gray-700">
           {videoOn ? "Video Off" : "Video On"}
         </button>
-
-        <button
-          onClick={endCall}
-          className="px-4 py-2 rounded bg-red-700"
-        >
+        <button onClick={endCall} className="px-4 py-2 rounded bg-red-700">
           End Call
         </button>
       </div>

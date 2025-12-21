@@ -17,10 +17,15 @@ export async function prepareMedia() {
 
   try {
     webrtcStore.localStream =
-      await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+     await navigator.mediaDevices.getUserMedia({
+  video: {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 }
+  },
+  audio: true,
+});
+
   } finally {
     preparingMedia = false;
   }
