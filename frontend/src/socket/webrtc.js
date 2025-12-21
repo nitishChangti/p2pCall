@@ -1,9 +1,10 @@
 import { getSocket } from "./socketClient";
 import { webrtcStore } from "./webrtcStore";
-
+import {flushIceCandidates} from './socketListeners'
 /* -------------------------------------------------- */
 /* MEDIA (USER GESTURE ONLY)                           */
 /* -------------------------------------------------- */
+let pendingCandidates = [];
 
 let preparingMedia = false;
 
@@ -38,10 +39,10 @@ export async function startCallerWebRTC(receiverId) {
 
   const pc = createPeerConnection(stream, receiverId);
   webrtcStore.pc = pc;
-
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-
+  flushIceCandidates(); // ✅ ADD THIS
+  
   socket.emit("webrtc-offer", { receiverId, offer });
 }
 
@@ -58,11 +59,11 @@ export async function startReceiverWebRTC(offer, callerId) {
 
   const pc = createPeerConnection(stream, callerId);
   webrtcStore.pc = pc;
-
   await pc.setRemoteDescription(offer);
-
+  
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
+  flushIceCandidates(); // ✅ ADD THIS
 
   socket.emit("webrtc-answer", { callerId, answer });
 }
@@ -74,10 +75,23 @@ export async function startReceiverWebRTC(offer, callerId) {
 function createPeerConnection(stream, targetUserId) {
   const socket = getSocket();
 
+  // const pc = new RTCPeerConnection({
+  //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  // });
   const pc = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  });
-
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+  ],
+});
+  // 🔍 ICE state debug (ADD HERE)
+  pc.oniceconnectionstatechange = () => {
+    console.log("ICE STATE:", pc.iceConnectionState);
+  };
   // Attach local tracks
   stream.getTracks().forEach(track => {
     pc.addTrack(track, stream);

@@ -101,6 +101,21 @@ socket.on("webrtc-answer", ({ callerId, answer }) => {
   }
 });
 
+  /* ---------------------- ICE CANDIDATE ------------------ */
+socket.on("ice-candidate", ({ targetUserId, candidate }) => {
+  const targetSocketId = userSocketMap.get(targetUserId);
+
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("ice-candidate", {
+      candidate,
+    });
+  } else {
+    console.log("❌ Target socket not found for ICE");
+  }
+});
+
+
+
       // 🔌 Disconnect
     socket.on("disconnect", () => {
       userSocketMap.delete(userId);

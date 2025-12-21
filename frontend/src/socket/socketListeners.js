@@ -14,7 +14,7 @@ import {startCallerWebRTC,startReceiverWebRTC,cleanupWebRTC} from './webrtc.js'
 /* ---------------------------------------------------- */
 /* SOCKET LISTENERS                                     */
 /* ---------------------------------------------------- */
-
+let pendingCandidates = []; // ✅ HERE
 export const registerSocketListeners = (socket, dispatch) => {
   socket.on("connect", () => {
     dispatch(socketConnected(socket.id));
@@ -57,13 +57,25 @@ export const registerSocketListeners = (socket, dispatch) => {
   });
 
   socket.on("ice-candidate", async ({ candidate }) => {
-    if (webrtcStore.pc && candidate) {
-      await webrtcStore.pc.addIceCandidate(candidate);
-    }
-  });
+  if (!webrtcStore.pc) {
+    pendingCandidates.push(candidate);
+    return;
+  }
+  await webrtcStore.pc.addIceCandidate(candidate);
+});
+
 
   socket.on("call-ended", () => {
   cleanupWebRTC();
 });
 
+};
+export const flushIceCandidates = async () => {
+  if (!webrtcStore.pc) return;
+
+  for (const candidate of pendingCandidates) {
+    await webrtcStore.pc.addIceCandidate(candidate);
+  }
+
+  pendingCandidates = [];
 };
