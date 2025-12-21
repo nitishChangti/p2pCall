@@ -56,7 +56,10 @@ export async function startReceiverWebRTC(offer, callerId) {
 
   const socket = getSocket();
   const stream = webrtcStore.localStream;
-
+  console.log(
+  "📤 Creating ANSWER with tracks:",
+  webrtcStore.localStream.getTracks().map(t => t.kind)
+);
   const pc = createPeerConnection(stream, callerId);
   webrtcStore.pc = pc;
   await pc.setRemoteDescription(offer);

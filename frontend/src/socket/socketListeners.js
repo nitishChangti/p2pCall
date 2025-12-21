@@ -2,6 +2,7 @@ import {
   socketConnected,
   socketDisconnected,
 } from "../store/socketSlice";
+import { prepareMedia } from "./webrtc";
 
 import {
   showIncomingCall,
@@ -52,9 +53,13 @@ socket.on("connect_error", (err) => {
   });
 
   socket.on("webrtc-offer", async ({ offer, callerId }) => {
+    // 🔴 GUARANTEE camera & mic exist
+  if (!webrtcStore.localStream) {
+    await prepareMedia();
+  }
   // ONLY signaling
   await startReceiverWebRTC(offer, callerId);
-  console.log('wenrtc offer',offer,"callerId",callerId);
+  console.log('webrtc offer',offer,"callerId",callerId);
 });
 
   socket.on("webrtc-answer", async ({ answer }) => {
