@@ -3,25 +3,25 @@ import { asyncHandler } from "../utils/asyncHandler.utils.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiRes.utils.js";
 import { validationResult } from "express-validator";
-const generateAccessAndRefreshTokens = async (userId) => {
-  try {
-    const user = await User.findById(userId);
+// const generateAccessAndRefreshTokens = async (userId) => {
+//   try {
+//     const user = await User.findById(userId);
 
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
+//     if (!user) {
+//       throw new ApiError(404, "User not found");
+//     }
 
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+//     const accessToken = user.generateAccessToken();
+//     const refreshToken = user.generateRefreshToken();
 
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
+//     user.refreshToken = refreshToken;
+//     await user.save({ validateBeforeSave: false });
 
-    return { accessToken, refreshToken };
-  } catch (error) {
-    throw new ApiError(500, "Something went wrong while generating tokens");
-  }
-};
+//     return { accessToken, refreshToken };
+//   } catch (error) {
+//     throw new ApiError(500, "Something went wrong while generating tokens");
+//   }
+// };
 
 export const registerUser = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
@@ -54,11 +54,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     "-password -refreshToken",
   );
 
-  const options = {
-    httpOnly: true,
-    secure: false,
-    sameSite: "strict",
-  };
+  const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+};
 
   return res
     .status(201)
@@ -117,10 +117,10 @@ export const loginUser = asyncHandler(async (req, res) => {
   );
 
   const cookieOptions = {
-    httpOnly: true,
-    secure: false, // true in production
-    sameSite: "lax",
-  };
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+};
 
   return res
     .status(200)
@@ -141,11 +141,11 @@ export const UserLogOut = asyncHandler(async (req, res) => {
   );
 
   // 2️⃣ Cookie options (MUST match login cookie options)
-  const options = {
-    httpOnly: true,
-    secure: false, // true in production (HTTPS)
-    sameSite: "strict",
-  };
+  const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+};
 
   // 3️⃣ Clear cookies
   res
