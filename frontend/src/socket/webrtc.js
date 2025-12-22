@@ -1,9 +1,8 @@
 import { getSocket } from "./socketClient";
 import { webrtcStore } from "./webrtcStore";
 
-/* -------------------------------------------------- */
-/* MEDIA                                              */
-/* -------------------------------------------------- */
+/* ---------------- MEDIA ---------------- */
+
 let preparingMedia = false;
 
 export async function prepareMedia(facingMode = "user") {
@@ -12,37 +11,24 @@ export async function prepareMedia(facingMode = "user") {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode,
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        frameRate: { ideal: 24 },
-      },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
+      video: { facingMode },
+      audio: true,
     });
 
     webrtcStore.localStream = stream;
     webrtcStore.currentFacingMode = facingMode;
-
     return stream;
   } finally {
     preparingMedia = false;
   }
 }
 
+/* ---------------- CALLER ---------------- */
 
-/* -------------------------------------------------- */
-/* CALLER                                             */
-/* -------------------------------------------------- */
 export async function startCallerWebRTC(receiverId) {
   if (webrtcStore.pc || !webrtcStore.localStream) return;
 
   webrtcStore.peerId = receiverId;
-
   const pc = createPeerConnection(receiverId);
   webrtcStore.pc = pc;
 
@@ -52,14 +38,12 @@ export async function startCallerWebRTC(receiverId) {
   getSocket().emit("webrtc-offer", { receiverId, offer });
 }
 
-/* -------------------------------------------------- */
-/* RECEIVER                                           */
-/* -------------------------------------------------- */
+/* ---------------- RECEIVER ---------------- */
+
 export async function startReceiverWebRTC(offer, callerId) {
   if (webrtcStore.pc || !webrtcStore.localStream) return;
 
   webrtcStore.peerId = callerId;
-
   const pc = createPeerConnection(callerId);
   webrtcStore.pc = pc;
 
@@ -71,9 +55,8 @@ export async function startReceiverWebRTC(offer, callerId) {
   getSocket().emit("webrtc-answer", { callerId, answer });
 }
 
-/* -------------------------------------------------- */
-/* PEER CONNECTION                                    */
-/* -------------------------------------------------- */
+/* ---------------- PEER CONNECTION ---------------- */
+
 function createPeerConnection(targetUserId) {
   const socket = getSocket();
 
@@ -88,16 +71,21 @@ function createPeerConnection(targetUserId) {
     ],
   });
 
-  pc.oniceconnectionstatechange = () => {
-    console.log("🧊 ICE STATE:", pc.iceConnectionState);
-  };
-
+  // add local tracks
   webrtcStore.localStream.getTracks().forEach(track => {
     pc.addTrack(track, webrtcStore.localStream);
   });
 
+  // ✅ FIX: merge remote tracks
+  const remoteStream = new MediaStream();
+  webrtcStore.remoteStream = remoteStream;
+
   pc.ontrack = (e) => {
-    webrtcStore.remoteStream = e.streams[0];
+    e.streams[0].getTracks().forEach(track => {
+      if (!remoteStream.getTracks().includes(track)) {
+        remoteStream.addTrack(track);
+      }
+    });
   };
 
   pc.onicecandidate = (e) => {
@@ -112,9 +100,8 @@ function createPeerConnection(targetUserId) {
   return pc;
 }
 
-/* -------------------------------------------------- */
-/* CAMERA SWITCH                                      */
-/* -------------------------------------------------- */
+/* ---------------- CAMERA SWITCH ---------------- */
+
 export async function switchCamera() {
   if (!webrtcStore.pc) return null;
 
@@ -134,13 +121,14 @@ export async function switchCamera() {
     await sender.replaceTrack(newVideoTrack);
   }
 
+  // ✅ IMPORTANT
+  webrtcStore.localStream = newStream;
+
   return newStream;
 }
 
+/* ---------------- CLEANUP ---------------- */
 
-/* -------------------------------------------------- */
-/* CLEANUP                                            */
-/* -------------------------------------------------- */
 export function cleanupWebRTC() {
   webrtcStore.pc?.close();
   webrtcStore.pc = null;
