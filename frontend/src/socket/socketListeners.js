@@ -1,5 +1,5 @@
 import { socketConnected, socketDisconnected } from "../store/socketSlice";
-import { showIncomingCall, callFailed } from "../store/callSlice";
+import { showIncomingCall, callFailed,callEnded } from "../store/callSlice";
 import { prepareMedia } from "./webrtc";
 import { webrtcStore } from "./webrtcStore";
 import {
@@ -9,17 +9,16 @@ import {
 } from "./webrtc";
 
 /* ---------------------------------------------------- */
-/* ICE QUEUE (SINGLE SOURCE OF TRUTH)                   */
+/* ICE QUEUE (single source of truth)                   */
 /* ---------------------------------------------------- */
 let pendingCandidates = [];
 
 export const flushIceCandidates = async () => {
   if (!webrtcStore.pc) return;
 
-  for (const candidate of pendingCandidates) {
-    await webrtcStore.pc.addIceCandidate(candidate);
+  for (const c of pendingCandidates) {
+    await webrtcStore.pc.addIceCandidate(c);
   }
-
   pendingCandidates = [];
 };
 
@@ -28,8 +27,8 @@ export const flushIceCandidates = async () => {
 /* ---------------------------------------------------- */
 export const registerSocketListeners = (socket, dispatch) => {
   socket.on("connect", () => {
-    dispatch(socketConnected(socket.id));
     console.log("🟢 Socket connected:", socket.id);
+    dispatch(socketConnected(socket.id));
   });
 
   socket.on("disconnect", () => {
@@ -38,35 +37,44 @@ export const registerSocketListeners = (socket, dispatch) => {
   });
 
   socket.on("incoming-call", (data) => {
+    // alert(`incoming call is received from backend to receiver`)
+    // console.log(' this is icoming call from backend to receiver');
     dispatch(showIncomingCall(data));
   });
 
   socket.on("call-accepted", async ({ receiverId }) => {
+    // alert(`user accepted a call request`)
+    // console.log('user accepted a call request');
     await startCallerWebRTC(receiverId);
   });
 
   socket.on("call-rejected", () => {
+    // alert(`user is rejecteed a call request`)
+    // console.log(`user is rejecteed a call request`);
     cleanupWebRTC();
     dispatch(callFailed());
   });
 
   socket.on("webrtc-offer", async ({ offer, callerId }) => {
+    // alert('webrtc -offer is recieved from bakend to receiever',offer,callerId)
+    // console.log('webrtc -offer is recieved from bakend to receiever',offer,callerId);
     if (!webrtcStore.localStream) {
       await prepareMedia();
+      // console.log(`webrtcStore.localStream does not exists`,webrtcStore.localStream);
+      // alert(`webrtcStore.localStream does not exists`,webrtcStore.localStream)
     }
-
+    console.log(`before startReceiverWebrtc`);
+    // alert(`before startReceiverWebrtc`)
     await startReceiverWebRTC(offer, callerId);
-
-    // ✅ Remote SDP set → now ICE is safe
+    // console.log(`after startReceiverWebrtc`);
+    // alert(`after startReceiverWebrtc`)
     await flushIceCandidates();
   });
 
   socket.on("webrtc-answer", async ({ answer }) => {
     if (!webrtcStore.pc) return;
-
+    // alert(`web-answer`,answer)
     await webrtcStore.pc.setRemoteDescription(answer);
-
-    // ✅ Remote SDP set → now ICE is safe
     await flushIceCandidates();
   });
 
@@ -75,11 +83,15 @@ export const registerSocketListeners = (socket, dispatch) => {
       pendingCandidates.push(candidate);
       return;
     }
-
     await webrtcStore.pc.addIceCandidate(candidate);
+    // alert('ice candidate ',candidate)
   });
 
   socket.on("call-ended", () => {
-    cleanupWebRTC();
-  });
+  console.log("📴 call-ended received on client");
+  cleanupWebRTC();
+  dispatch(callEnded())
+  // alert('call ended')
+});
+
 };

@@ -25,6 +25,14 @@ const callSlice = createSlice({
     callFailed(state) {
       state.callStatus = "idle";
     },
+     callEnded(state) {
+      state.status = "ended";
+      state.incomingCall = null;
+    },
+        resetCall(state) {
+      state.status = "idle";
+      state.incomingCall = null;
+    },
   },
 });
 
@@ -34,6 +42,8 @@ export const {
   callAccepted,
   callRejected,
   callFailed,
+  callEnded,
+  resetCall
 } = callSlice.actions;
 
 export default callSlice.reducer;

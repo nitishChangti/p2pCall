@@ -6,7 +6,8 @@ app.use(
   cors({
     origin: [
       `http://localhost:5173`, // Your frontend on Vercel
-       "https://p2pcall-sigma.vercel.app"
+       "https://p2pcall-sigma.vercel.app",
+       "https://xzq1pm1p-5173.inc1.devtunnels.ms"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],

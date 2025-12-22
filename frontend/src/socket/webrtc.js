@@ -2,50 +2,65 @@ import { getSocket } from "./socketClient";
 import { webrtcStore } from "./webrtcStore";
 
 /* -------------------------------------------------- */
-/* MEDIA                                               */
+/* MEDIA                                              */
 /* -------------------------------------------------- */
 let preparingMedia = false;
 
-export async function prepareMedia() {
-  if (webrtcStore.localStream || preparingMedia) return;
-
+export async function prepareMedia(facingMode = "user") {
+  if (preparingMedia) return webrtcStore.localStream;
   preparingMedia = true;
+
   try {
-    webrtcStore.localStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720, frameRate: 30 },
-      audio: true,
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode,
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 24 },
+      },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     });
+
+    webrtcStore.localStream = stream;
+    webrtcStore.currentFacingMode = facingMode;
+
+    return stream;
   } finally {
     preparingMedia = false;
   }
 }
 
+
 /* -------------------------------------------------- */
-/* CALLER                                              */
+/* CALLER                                             */
 /* -------------------------------------------------- */
 export async function startCallerWebRTC(receiverId) {
   if (webrtcStore.pc || !webrtcStore.localStream) return;
 
-  const socket = getSocket();
-  const pc = createPeerConnection(receiverId);
+  webrtcStore.peerId = receiverId;
 
+  const pc = createPeerConnection(receiverId);
   webrtcStore.pc = pc;
 
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
-  socket.emit("webrtc-offer", { receiverId, offer });
+  getSocket().emit("webrtc-offer", { receiverId, offer });
 }
 
 /* -------------------------------------------------- */
-/* RECEIVER                                            */
+/* RECEIVER                                           */
 /* -------------------------------------------------- */
 export async function startReceiverWebRTC(offer, callerId) {
   if (webrtcStore.pc || !webrtcStore.localStream) return;
 
-  const socket = getSocket();
-  const pc = createPeerConnection(callerId);
+  webrtcStore.peerId = callerId;
 
+  const pc = createPeerConnection(callerId);
   webrtcStore.pc = pc;
 
   await pc.setRemoteDescription(offer);
@@ -53,11 +68,11 @@ export async function startReceiverWebRTC(offer, callerId) {
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
 
-  socket.emit("webrtc-answer", { callerId, answer });
+  getSocket().emit("webrtc-answer", { callerId, answer });
 }
 
 /* -------------------------------------------------- */
-/* PEER CONNECTION                                     */
+/* PEER CONNECTION                                    */
 /* -------------------------------------------------- */
 function createPeerConnection(targetUserId) {
   const socket = getSocket();
@@ -74,30 +89,22 @@ function createPeerConnection(targetUserId) {
   });
 
   pc.oniceconnectionstatechange = () => {
-    console.log("ICE STATE:", pc.iceConnectionState);
+    console.log("🧊 ICE STATE:", pc.iceConnectionState);
   };
 
-  webrtcStore.localStream.getTracks().forEach((track) => {
+  webrtcStore.localStream.getTracks().forEach(track => {
     pc.addTrack(track, webrtcStore.localStream);
   });
 
-  pc.ontrack = (event) => {
-    console.log("🎥 Remote stream received");
-
-    const remoteStream = event.streams[0];
-    webrtcStore.remoteStream = remoteStream;
-
-    const video = document.getElementById("remote-video");
-    if (video && video.srcObject !== remoteStream) {
-      video.srcObject = remoteStream;
-    }
+  pc.ontrack = (e) => {
+    webrtcStore.remoteStream = e.streams[0];
   };
 
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
       socket.emit("ice-candidate", {
         targetUserId,
-        candidate: event.candidate,
+        candidate: e.candidate,
       });
     }
   };
@@ -106,18 +113,40 @@ function createPeerConnection(targetUserId) {
 }
 
 /* -------------------------------------------------- */
-/* CLEANUP                                             */
+/* CAMERA SWITCH                                      */
+/* -------------------------------------------------- */
+export async function switchCamera() {
+  if (!webrtcStore.pc) return null;
+
+  const newFacingMode =
+    webrtcStore.currentFacingMode === "user"
+      ? "environment"
+      : "user";
+
+  const newStream = await prepareMedia(newFacingMode);
+  const newVideoTrack = newStream.getVideoTracks()[0];
+
+  const sender = webrtcStore.pc
+    .getSenders()
+    .find(s => s.track?.kind === "video");
+
+  if (sender) {
+    await sender.replaceTrack(newVideoTrack);
+  }
+
+  return newStream;
+}
+
+
+/* -------------------------------------------------- */
+/* CLEANUP                                            */
 /* -------------------------------------------------- */
 export function cleanupWebRTC() {
-  if (webrtcStore.pc) {
-    webrtcStore.pc.close();
-    webrtcStore.pc = null;
-  }
+  webrtcStore.pc?.close();
+  webrtcStore.pc = null;
 
-  if (webrtcStore.localStream) {
-    webrtcStore.localStream.getTracks().forEach((t) => t.stop());
-    webrtcStore.localStream = null;
-  }
-
+  webrtcStore.localStream?.getTracks().forEach(t => t.stop());
+  webrtcStore.localStream = null;
   webrtcStore.remoteStream = null;
+  webrtcStore.peerId = null;
 }

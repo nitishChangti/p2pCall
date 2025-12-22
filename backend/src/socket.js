@@ -7,7 +7,7 @@ const userSocketMap = new Map();
 export function initializeSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: ["http://localhost:5173", "https://p2pcall-sigma.vercel.app"], // your frontend (Vite, React, etc.)
+      origin: ["http://localhost:5173", "https://p2pcall-sigma.vercel.app","https://xzq1pm1p-5173.inc1.devtunnels.ms"], // your frontend (Vite, React, etc.)
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -84,6 +84,7 @@ export function initializeSocket(server) {
              offer,
               callerId: userId, // sender is caller
         })
+        console.log(`webrtc offer req is sended from backend to receiver`);
       }
       else{
            console.log("❌ Receiver socket not found for offer");
@@ -118,6 +119,17 @@ socket.on("ice-candidate", ({ targetUserId, candidate }) => {
     console.log('ice candidate is sended to given user',targetSocketId,candidate);
   } else {
     console.log("❌ Target socket not found for ICE");
+  }
+});
+
+  /* -------------------- Call Ended --------------- */
+  socket.on("call-ended", ({ targetUserId }) => {
+    const targetSocketId = userSocketMap.get(targetUserId);
+    console.log(targetUserId,'call ended is',targetSocketId);
+
+  if (targetSocketId) {
+    io.to(targetSocketId).emit("call-ended");
+    console.log('call ended socket sended to the particular user');
   }
 });
 

@@ -65,9 +65,9 @@ export default function Header() {
             </>
           ) : (
             <>
-              <span className="text-slate-400">
+              {/* <span className="text-slate-400">
                 Hi, {user?.name}
-              </span>
+              </span> */}
 
               <Link
                 to="/profile"

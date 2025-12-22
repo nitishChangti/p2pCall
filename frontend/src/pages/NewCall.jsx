@@ -6,6 +6,7 @@
   import { useNavigate } from "react-router-dom";
   // import { registerSocketListeners } from "../socket/socketListeners";
   import { useState } from "react";
+import { webrtcStore } from "../socket/webrtcStore";
   export default function NewCall() {
     const navigate = useNavigate()
     const [targetUserId,setTargetUserId] = useState("")
@@ -14,19 +15,22 @@
     const handleCall =async ()=>{
       if(!user?._id) return ;
 
+      await prepareMedia();   // ✅ user click
       const socket = getSocket();
       if (!socket) {
       console.error("❌ Socket not connected");
       return;
     } 
-    console.log(`tagetId ${targetUserId}`);
-      // await prepareMedia();   // ✅ user click
+      const peerId = targetUserId.trim();
+        webrtcStore.peerId = peerId;
+        // console.log(`peerId is`,peerId,webrtcStore.peerId);
+    // console.log(`tagetId ${targetUserId}`);
     socket.emit('new-call',{
         callerId: user._id,
       receiverId: targetUserId.trim(),
       callType: "video", // or "audio"
     })
-    console.log("📞 New call request emitted");
+    // console.log("📞 New call request emitted");
         // Navigate to call page (optional)
   navigate(`/call/${targetUserId}`);
     }

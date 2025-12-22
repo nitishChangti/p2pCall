@@ -131,6 +131,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 
 export const UserLogOut = asyncHandler(async (req, res) => {
+  console.log('this is a controller of user logout');
   const userId = req.user._id;
 
   // 1️⃣ Remove refresh token from DB
@@ -141,7 +142,7 @@ export const UserLogOut = asyncHandler(async (req, res) => {
   );
 
   // 2️⃣ Cookie options (MUST match login cookie options)
-  const cookieOptions = {
+  const options = {
   httpOnly: true,
   secure: true,
   sameSite: "none",

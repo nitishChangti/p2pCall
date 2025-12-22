@@ -3,9 +3,8 @@ import App from "../App";
 import Home from '../pages/Home'
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import  AuthLayout from '../components/AuthLayout'
+import  {AuthPageLayout,AuthLayout,CallPage} from '../components/index'
 import NewCall from "../pages/NewCall";
-import { CallPage } from "../components/index";
 
 const router = createBrowserRouter([
   {
@@ -13,29 +12,47 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        path: "/",
+        // path: "/",
+        index: true,
         element: <Home />
       },
       {
-        path: "/login",
-        element: <Login />
+        path: "login",
+        element: (
+          <AuthLayout authentication={false}>
+            <Login />
+          </AuthLayout>
+        )
+          
       },
       {
-        path: "/signup",
-        element: <Register />
+        path: "signup",
+        element: (
+          <AuthLayout authentication={false}>
+            <Register />
+          </AuthLayout>
+        )
       },
       {
-        element: <AuthLayout />,
+        element: (
+          <AuthLayout authentication={true}>
+            <AuthPageLayout/>
+          </AuthLayout>
+        ),
         children: [
           {
-            path: "/video-request",
+            path: "video-request",
             element: <NewCall />
           },
-          {
-            path: "/call/:userId",     // ✅ NEW ROUTE
-            element: <CallPage />
-          }
         ]
+      },
+      {
+        path: "call/:userId",     // ✅ NEW ROUTE
+        element:(
+          <AuthLayout authentication={true}>
+            <CallPage />
+          </AuthLayout>
+        ) 
       }
     ]
   }

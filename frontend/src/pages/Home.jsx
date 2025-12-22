@@ -3,18 +3,27 @@ import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 
 export default function Home() {
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated,user } = useSelector((state) => state.auth);
 
   return (
     <div className="bg-slate-950 text-white overflow-x-hidden">
       {/* ================= HERO / BANNER ================= */}
-      <section className="min-h-screen flex items-center justify-center pt-20">
+      <section className="min-h-screen flex items-center justify-center pt-5">
         <motion.div
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="text-center max-w-3xl px-6"
         >
+          {isAuthenticated && (
+  <p className="mb-4 text-slate-400 text-lg">
+    Welcome back,
+    <span className="ml-1 text-white font-medium">
+      {user?.name}
+    </span>
+  </p>
+)}
+
           <h2 className="text-5xl font-bold leading-tight">
             Secure <span className="text-blue-500">Peer-to-Peer</span>
             <br />
@@ -28,11 +37,12 @@ export default function Home() {
 
           <div className="mt-8 flex justify-center gap-4">
             <Link
-              to={isAuthenticated ? "/profile" : "/signup"}
-              className="px-6 py-3 rounded bg-blue-600 hover:bg-blue-700 transition transform hover:scale-105"
-            >
-              Get Started
-            </Link>
+  to={isAuthenticated ? "/video-request" : "/signup"}
+  className="px-6 py-3 rounded bg-blue-600 hover:bg-blue-700 transition"
+>
+  {isAuthenticated ? "Start a Call" : "Get Started"}
+</Link>
+
 
             <a
               href="#features"

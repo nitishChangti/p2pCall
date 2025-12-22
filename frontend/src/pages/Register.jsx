@@ -23,20 +23,7 @@ export default function Register() {
     dispatch(authStart());
     console.log(data);
     try {
-      // TEMP: mock success (replace with API later)
-      // dispatch(
-      //   authSuccess({
-      //     user: {
-      //       id: 1,
-      //       name: data.name,
-      //       email: data.email,
-      //     },
-      //     token: "mock-token",
-      //   })
-      // );
-
-      // navigate("/profile");
-      if(data.password !== data.confirmPassword)  {
+          if(data.password !== data.confirmPassword)  {
         dispatch(authFailure("Passwords do not match"));
         console.error(`enter a matchable password`)
         return ;
