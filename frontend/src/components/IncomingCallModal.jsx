@@ -7,6 +7,7 @@ import {
 import { getSocket } from "../socket/socketClient";
 import { prepareMedia } from "../socket/webrtc";
 import { useNavigate } from "react-router-dom";
+import { ClockFading } from "lucide-react";
 export default function IncomingCallModal() {
   const dispatch = useDispatch();
   const navigate = useNavigate()
@@ -17,10 +18,13 @@ export default function IncomingCallModal() {
 
   const handleAccept = async() => {
     const socket = getSocket();
-    //   await prepareMedia();   // ✅ user click
+     const prepare=  await prepareMedia();   // ✅ user click
+     console.log('prepare is',prepare);
+
     socket.emit("accept-call", {
       callerId: incomingCall.callerId,
     });
+    // alert('receiver is accepted the call')
     console.log(`preparemedia is executed`);
       navigate(`/call/${incomingCall.callerId}`);
      // ✅ Update receiver UI immediately
@@ -40,6 +44,7 @@ export default function IncomingCallModal() {
     socket.emit("reject-call", {
       callerId: incomingCall.callerId,
     });
+    // alert('receiver is rejected the call')
 
     dispatch(callRejected());
     dispatch(clearIncomingCall());

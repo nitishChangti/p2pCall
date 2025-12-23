@@ -9,7 +9,7 @@ export default function Header() {
   const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-  console.log(isAuthenticated,user);
+  // console.log(isAuthenticated,user);
   // const hideHeaderOn = ["/call"];
   // if (hideHeaderOn.some((path) => location.pathname.startsWith(path))) {
   //   return null;

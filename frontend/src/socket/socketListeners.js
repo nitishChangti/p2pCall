@@ -25,9 +25,11 @@ export const registerSocketListeners = (socket, dispatch) => {
 
   socket.on("incoming-call", (data) => {
     dispatch(showIncomingCall(data));
+    // alert('incoming call req receiver got')
   });
 
   socket.on("call-accepted", async ({ receiverId }) => {
+    // alert('the receiver is accepted the call the user A got notification')
     await startCallerWebRTC(receiverId);
   });
 
@@ -37,6 +39,7 @@ export const registerSocketListeners = (socket, dispatch) => {
   });
 
   socket.on("webrtc-offer", async ({ offer, callerId }) => {
+    // alert("the receiver is received a user A's webrtc-offer ")
     if (!webrtcStore.localStream) {
       await prepareMedia();
     }
@@ -45,6 +48,7 @@ export const registerSocketListeners = (socket, dispatch) => {
   });
 
   socket.on("webrtc-answer", async ({ answer }) => {
+    // alert('webrtc ans got from Userb to UserA')
     await webrtcStore.pc?.setRemoteDescription(answer);
     await flushIceCandidates();
   });
