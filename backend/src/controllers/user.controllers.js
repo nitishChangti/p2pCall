@@ -54,7 +54,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     "-password -refreshToken",
   );
 
-  const cookieOptions = {
+  const options = {
   httpOnly: true,
   secure: true,
   sameSite: "none",
