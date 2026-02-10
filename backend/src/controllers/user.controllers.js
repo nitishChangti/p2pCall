@@ -59,7 +59,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   secure: true,
   sameSite: "none",
 };
-
+ 
   return res
     .status(201)
     .cookie("accessToken", accessToken, options)
